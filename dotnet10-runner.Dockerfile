@@ -1,0 +1,22 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS sdk-source
+FROM ghcr.io/actions/actions-runner:latest
+
+USER root
+
+RUN apt-get update && apt-get install -y \
+    zip \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=sdk-source /usr/share/dotnet /usr/share/dotnet
+COPY --from=sdk-source /usr/bin/dotnet /usr/bin/dotnet
+
+RUN ln -s /usr/share/dotnet/dotnet /usr/local/bin/dotnet
+
+ENV DOTNET_ROOT=/usr/share/dotnet
+ENV PATH="${PATH}:${DOTNET_ROOT}"
+
+COPY shared/*.sh /usr/local/bin/
+COPY dotnet/*.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/*.sh
+
+USER runner
