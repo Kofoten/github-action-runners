@@ -23,21 +23,17 @@ FULL_IMAGE     := $(REGISTRY)/$(IMAGE_NAME):$(TAG)
 ARC_NAMESPACE  ?= arc-runners
 HELM_CHART     ?= oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
 
-.PHONY: all build load deploy
+.PHONY: all build deploy
 
-all: build load deploy
+all: build deploy
 
 build:
-	@echo "Building runner image for $(RUNNER): $(FULL_IMAGE)..."
-	docker buildx build --no-cache --pull -t $(FULL_IMAGE) -f $(RUNNER)-runner.Dockerfile . --load
-
-load: build
 	@echo "Checking sudo access..."
-	@sudo -n -v || (echo "ERROR: No active sudo session. Run 'sudo -v' manually first, or run 'sudo make load'." && exit 1)
-	@echo "Loading $(FULL_IMAGE) into containerd..."
-	docker save $(FULL_IMAGE) | sudo ctr -n k8s.io images import -
+	@sudo -n -v || (echo "ERROR: No active sudo session. Run 'sudo -v' manually first." && exit 1)
+	@echo "Building runner image for $(RUNNER) directly into containerd k8s.io namespace..."
+	sudo nerdctl -n k8s.io build --no-cache --pull -t $(FULL_IMAGE) -f $(RUNNER)-runner.Dockerfile .
 
-deploy:
+deploy: build
 	@echo "Applying/Upgrading the ARC scale set for $(TARGET_NAME)..."
 	helm upgrade --install $(SCALE_SET_NAME) $(HELM_CHART) \
 		--namespace $(ARC_NAMESPACE) \

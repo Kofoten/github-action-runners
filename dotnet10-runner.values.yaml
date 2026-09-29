@@ -1,5 +1,5 @@
 githubConfigUrl: "https://github.com/Kofoten"
-githubConfigSecret: "arc-github-app-secret"
+githubConfigSecret: "github-app-secret"
 runnerScaleSetName: "dotnet10-arc-runner"
 
 template:
